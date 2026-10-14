@@ -12,6 +12,8 @@ import { RegistrationFormsModule } from './modules/registration-forms/registrati
 
 import { validateEnvironment } from './common/config/env.validation.js';
 
+import { CommonModule } from './common/common.module.js';
+
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
@@ -20,6 +22,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       isGlobal: true,
       validate: validateEnvironment,
     }),
+    CommonModule,
     DatabaseModule,
     UsersModule,
     ProfilesModule,

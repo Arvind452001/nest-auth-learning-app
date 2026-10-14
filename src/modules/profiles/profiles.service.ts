@@ -122,6 +122,26 @@ export class ProfilesService {
     };
   }
 
+  async updateAvatarUrl(userId: string, avatarUrl: string) {
+    this.validateId(userId);
+    const userObjectId = new Types.ObjectId(userId);
+    await Promise.all([
+      this.studentProfileModel.updateOne(
+        { userId: userObjectId },
+        { $set: { avatarUrl } },
+      ),
+      this.interviewerProfileModel.updateOne(
+        { userId: userObjectId },
+        { $set: { avatarUrl } },
+      ),
+      this.teacherProfileModel.updateOne(
+        { userId: userObjectId },
+        { $set: { avatarUrl } },
+      ),
+    ]);
+    return { avatarUrl };
+  }
+
   async createProfileForRegistration(
     userId: Types.ObjectId,
     role: Role,

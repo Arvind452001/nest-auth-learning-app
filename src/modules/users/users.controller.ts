@@ -49,8 +49,6 @@ export class UsersController {
     return this.usersService.findSafeById(userId);
   }
 
-
-
   @ApiOperation({ summary: 'Update currently authenticated user details' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)

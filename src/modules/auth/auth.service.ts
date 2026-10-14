@@ -24,6 +24,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { MailService } from '../../common/services/mail.service.js';
 
 const ALLOWED_PUBLIC_ROLES = [Role.STUDENT, Role.INTERVIEWER, Role.TEACHER];
 
@@ -35,6 +36,7 @@ export class AuthService {
     private readonly registrationFormsService: RegistrationFormsService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly mailService: MailService,
   ) {}
 
   private generateOtp(): string {
@@ -122,10 +124,15 @@ export class AuthService {
       profileData,
     );
 
+    // Send verification OTP email for student registration
+    if (targetRole === Role.STUDENT) {
+      await this.mailService.sendVerificationOtp(email, credentials.name, otp);
+    }
+
     return {
       message:
         targetRole === Role.STUDENT
-          ? 'Registration successful. An email verification OTP has been generated.'
+          ? 'Registration successful. An email verification OTP has been sent to your email.'
           : 'Registration submitted successfully. Your account is pending administrator approval.',
       user: this.usersService.sanitizeUser(user),
       formVersion: form.version,
@@ -178,6 +185,10 @@ export class AuthService {
       targetRole,
       {},
     );
+
+    if (targetRole === Role.STUDENT) {
+      await this.mailService.sendVerificationOtp(email, dto.name, otp);
+    }
 
     return {
       message:
@@ -366,7 +377,7 @@ export class AuthService {
         otp,
         otpExpiresAt,
       });
-      // Email sending integration hook
+      await this.mailService.sendPasswordResetOtp(user.email, user.name, otp);
     }
 
     return {
@@ -443,6 +454,8 @@ export class AuthService {
       otp,
       otpExpiresAt,
     });
+
+    await this.mailService.sendVerificationOtp(user.email, user.name, otp);
 
     return { message: 'New OTP sent to email' };
   }

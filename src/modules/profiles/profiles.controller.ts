@@ -4,11 +4,17 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -22,11 +28,18 @@ import { Role } from '../../common/enums/role.enum.js';
 import { VerificationStatus } from '../../common/enums/verification-status.enum.js';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto.js';
 import { ProfilesService } from './profiles.service.js';
+import {
+  CloudinaryService,
+  UploadableFile,
+} from '../../common/services/cloudinary.service.js';
 
 @ApiTags('Profiles')
 @Controller('profiles')
 export class ProfilesController {
-  constructor(private readonly profilesService: ProfilesService) {}
+  constructor(
+    private readonly profilesService: ProfilesService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   @ApiOperation({ summary: 'Get current user profile(s)' })
   @ApiBearerAuth()
@@ -73,5 +86,69 @@ export class ProfilesController {
     @Body('status') status: VerificationStatus,
   ) {
     return this.profilesService.setVerificationStatus(userId, type, status);
+  }
+
+  @ApiOperation({
+    summary: 'Upload avatar to Cloudinary and update current user profile',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAvatar(
+    @CurrentUser('id') userId: string,
+    @UploadedFile() file: any,
+  ) {
+    const uploadResult = await this.cloudinaryService.uploadImage(
+      file,
+      'careerlaunch/avatars',
+    );
+    await this.profilesService.updateAvatarUrl(userId, uploadResult.secureUrl);
+    return {
+      message: 'Avatar uploaded and updated successfully',
+      url: uploadResult.secureUrl,
+      publicId: uploadResult.publicId,
+    };
+  }
+
+  @ApiOperation({ summary: 'Upload general image to Cloudinary' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('upload-image')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(@UploadedFile() file: any) {
+    const uploadResult = await this.cloudinaryService.uploadImage(
+      file,
+      'careerlaunch/uploads',
+    );
+    return {
+      message: 'Image uploaded successfully',
+      url: uploadResult.secureUrl,
+      publicId: uploadResult.publicId,
+    };
   }
 }
