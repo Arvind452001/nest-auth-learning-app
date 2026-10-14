@@ -32,6 +32,7 @@ import {
   CloudinaryService,
   UploadableFile,
 } from '../../common/services/cloudinary.service.js';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 @ApiTags('Profiles')
 @Controller('profiles')
@@ -106,6 +107,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('avatar')
+  @UseGuards(ThrottlerGuard)
+@Throttle({default: {limit: 3,ttl: 86400000}})
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(
     @CurrentUser('id') userId: string,
@@ -139,6 +142,8 @@ export class ProfilesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('upload-image')
+  @UseGuards(ThrottlerGuard)
+@Throttle({default: {limit: 3,ttl: 86400000}})
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(@UploadedFile() file: any) {
     const uploadResult = await this.cloudinaryService.uploadImage(

@@ -1,10 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -24,6 +18,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import { ResendOtpDto } from './dto/resend-otp.dto.js';
 import { AuthService } from './auth.service.js';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -32,6 +27,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Health check endpoint' })
   @Get('health')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   healthCheck() {
     return {
       success: true,
@@ -96,6 +93,8 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   changePassword(
     @CurrentUser('id') userId: string,
     @Body() dto: ChangePasswordDto,
@@ -105,6 +104,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Public: Request password reset OTP' })
   @Post('forgot-password')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
   }
@@ -117,6 +118,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Public: Reset password with OTP' })
   @Post('reset-password')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
@@ -129,6 +132,8 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Public: Resend email verification OTP' })
   @Post('resend-otp')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   resendOtp(@Body() dto: ResendOtpDto) {
     return this.authService.resendOtp(dto.email);
   }

@@ -13,6 +13,7 @@ import { RegistrationFormsModule } from './modules/registration-forms/registrati
 import { validateEnvironment } from './common/config/env.validation.js';
 
 import { CommonModule } from './common/common.module.js';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -22,6 +23,14 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       isGlobal: true,
       validate: validateEnvironment,
     }),
+     ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000, // समय सीमा मिलीसेकंड में (यहाँ 60000 ms = 1 मिनट)
+        limit: 10,  // इस समय सीमा में अधिकतम requests की संख्या
+      },
+    ]),
+    
     CommonModule,
     DatabaseModule,
     UsersModule,
